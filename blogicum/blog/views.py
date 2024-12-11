@@ -1,12 +1,25 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, reverse, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserChangeForm
+from django.views.generic import CreateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
+
 
 from .models import Post, Category
+from .forms import PostForm
 
 
 NUM_PUBLICATIONS_ON_MAIN_PAGE = 5
+NUM_ITEMS_PER_PAGE = 2
+
+
+def _get_page_obj(post_list, request):
+    """Make page_obj for page context."""
+    paginator = Paginator(post_list, NUM_ITEMS_PER_PAGE)
+    page_number = request.GET.get('page')
+    return paginator.get_page(page_number)
 
 
 def index(request):
@@ -14,7 +27,8 @@ def index(request):
     post_list = Post.objects.related().published().filter(
         category__is_published=True
     )[:NUM_PUBLICATIONS_ON_MAIN_PAGE]
-    context = {'post_list': post_list}
+    page_obj = _get_page_obj(post_list, request)
+    context = {'page_obj': page_obj}
     return render(request, template, context=context)
 
 
@@ -36,21 +50,25 @@ def category_posts(request, category_slug):
         slug=category_slug
     )
     post_list = category.posts.published()
+    page_obj = _get_page_obj(post_list, request)
     template = 'blog/category.html'
     context = {
         'category': category,
-        'post_list': post_list
+        'page_obj': page_obj
     }
+    print(context)
     return render(request, template, context=context)
 
 
 def profile_view(request, username):
     template = 'blog/profile.html'
     user_profile = get_object_or_404(User, username=username)
+    post_list = user_profile.posts.published()
+    page_obj = _get_page_obj(post_list, request)
     is_owner = request.user == user_profile
     context = {
         'profile': user_profile,
-        'page_obj': user_profile.posts.published(),
+        'page_obj': page_obj,
         'is_owner': is_owner
     }
     return render(request, template, context=context)
@@ -69,5 +87,11 @@ def profile_edit_view(request):
     return render(request, template, context={'form': form})
 
 
-def create_post(request):
-    ...
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/create.html'
+
+    def get_success_url(self):
+        username = self.request.user.username
+        return reverse('blog:profile', kwargs={'username': username})
