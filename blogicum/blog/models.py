@@ -96,6 +96,10 @@ class Post(TitledRecord):
 
     objects = PostQuerySet().as_manager()
 
+    @property
+    def comment_count(self):
+        return self.comments.count()
+
     class Meta:
         default_related_name = 'posts'
         ordering = ('-pub_date',)
