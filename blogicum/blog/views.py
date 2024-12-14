@@ -83,7 +83,7 @@ def profile_view(request, username):
     else:
         post_list = user_profile.posts.published()
     page_obj = _get_page_obj(post_list, request)
-    
+
     context = {
         'profile': user_profile,
         'page_obj': page_obj,
