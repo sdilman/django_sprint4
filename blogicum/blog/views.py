@@ -26,9 +26,7 @@ def _get_page_obj(post_list, request):
 
 def index(request):
     template = 'blog/index.html'
-    post_list = Post.objects.related().published().filter(
-        category__is_published=True
-    ).annotate(
+    post_list = Post.objects.published().annotate(
         comment_count=Count('comments')
     ).order_by('-pub_date')[:NUM_PUBLICATIONS_ON_MAIN_PAGE]
     page_obj = _get_page_obj(post_list, request)
@@ -42,7 +40,6 @@ def post_detail(request, id):
     post = get_object_or_404(Post, id=id)
     if post.author != user and not post.is_published:
         raise Http404
-
     if request.method == 'POST':
         form = CommentForm(request.POST)
         if form.is_valid():
