@@ -1,6 +1,4 @@
 from django.urls import path
-from django.conf import settings
-from django.conf.urls.static import static
 
 from . import views
 
@@ -26,4 +24,4 @@ urlpatterns = [
     path('posts/<int:post_id>/delete_comment/<int:comment_id>/',
          views.CommentDeleteView.as_view(),
          name='delete_comment')
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]

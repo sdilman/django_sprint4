@@ -38,7 +38,10 @@ def post_detail(request, id):
     template = 'blog/detail.html'
     user = request.user
     post = get_object_or_404(Post, id=id)
-    if post.author != user and not post.is_published:
+    if (
+        post.author != user
+        and not (post.is_published and post.category.is_published)
+    ):
         raise Http404
     if request.method == 'POST':
         form = CommentForm(request.POST)
