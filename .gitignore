@@ -151,3 +151,4 @@ media/
 sent_emails/
 
 templates/
+blogicum/static/css/
