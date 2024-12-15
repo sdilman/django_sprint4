@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path, include, reverse_lazy
 from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView
-
+from django.conf import settings
 
 handler404 = 'pages.views.page_not_found'
 handler500 = 'pages.views.server_error'
@@ -38,3 +38,8 @@ urlpatterns = [
     ),
     path('auth/', include('django.contrib.auth.urls'))
 ]
+
+if settings.DEBUG:
+    urlpatterns = [
+        path('__debug__/', include('debug_toolbar.urls')),
+    ] + urlpatterns
