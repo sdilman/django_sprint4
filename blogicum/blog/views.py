@@ -1,11 +1,12 @@
-from django.shortcuts import render, reverse, redirect, get_object_or_404
-from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserChangeForm
-from django.views.generic import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.models import User
 from django.core.paginator import Paginator
+from django.db.models import Count
 from django.http import Http404
+from django.shortcuts import render, reverse, redirect, get_object_or_404
+from django.views.generic import CreateView, UpdateView, DeleteView
 
 
 from .models import Post, Comment, Category
@@ -27,7 +28,9 @@ def index(request):
     template = 'blog/index.html'
     post_list = Post.objects.related().published().filter(
         category__is_published=True
-    )[:NUM_PUBLICATIONS_ON_MAIN_PAGE]
+    ).annotate(
+        comment_count=Count('comments')
+    ).order_by('-pub_date')[:NUM_PUBLICATIONS_ON_MAIN_PAGE]
     page_obj = _get_page_obj(post_list, request)
     context = {'page_obj': page_obj}
     return render(request, template, context=context)
@@ -63,7 +66,9 @@ def category_posts(request, category_slug):
         is_published=True,
         slug=category_slug
     )
-    post_list = category.posts.published()
+    post_list = category.posts.published().annotate(
+        comment_count=Count('comments')
+    ).order_by('-pub_date')
     page_obj = _get_page_obj(post_list, request)
     template = 'blog/category.html'
     context = {
@@ -78,12 +83,11 @@ def profile_view(request, username):
     template = 'blog/profile.html'
     user_profile = get_object_or_404(User, username=username)
     is_owner = request.user == user_profile
-    if is_owner:
-        post_list = user_profile.posts.all()
-    else:
-        post_list = user_profile.posts.published()
+    post_list = user_profile.posts.annotate(
+        comment_count=Count('comments')).order_by('-pub_date')
+    if not is_owner:
+        post_list = post_list.published()
     page_obj = _get_page_obj(post_list, request)
-
     context = {
         'profile': user_profile,
         'page_obj': page_obj,
