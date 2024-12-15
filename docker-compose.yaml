@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: django_app
+    ports:
+      - "8000:8000"       # Порт для Gunicorn
+    volumes:
+      - static_volume:/app/blogicum/static
+      - media_volume:/app/blogicum/media
+    depends_on:
+      - db
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile-nginx
+    container_name: nginx
+    ports:
+      - "80:80"           # HTTP-порт NGINX
+    volumes:
+      - static_volume:/app/blogicum/static
+      - media_volume:/app/blogicum/media
+    depends_on:
+      - web
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  static_volume:    # Для статики
+  media_volume:     # Для медиафайлов
+  postgres_data:    # Для данных базы данных
