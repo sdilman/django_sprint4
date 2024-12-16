@@ -13,11 +13,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include, reverse_lazy
 from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView
-
+from django.conf import settings
 
 handler404 = 'pages.views.page_not_found'
 handler500 = 'pages.views.server_error'
@@ -38,3 +39,10 @@ urlpatterns = [
     ),
     path('auth/', include('django.contrib.auth.urls'))
 ]
+
+if settings.DEBUG:
+    urlpatterns = (
+        urlpatterns
+        + [path('__debug__/', include('debug_toolbar.urls')),]
+        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    )
