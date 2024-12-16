@@ -5,33 +5,28 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Count
 from django.http import Http404
-from django.shortcuts import render, reverse, redirect, get_object_or_404
-from django.views.generic import CreateView, UpdateView, DeleteView
+from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.views.generic import CreateView, DeleteView, UpdateView
+
+from .models import Category, Comment, Post
+from .forms import CommentForm, PostForm
 
 
-from .models import Post, Comment, Category
-from .forms import PostForm, CommentForm
+ITEMS_PER_PAGE = 10
 
 
-NUM_PUBLICATIONS_ON_MAIN_PAGE = 10
-NUM_ITEMS_PER_PAGE = 10
-
-
-def _get_page_obj(post_list, request):
+def _get_page_obj(posts, request, items_per_page=ITEMS_PER_PAGE):
     """Make page_obj for page context."""
-    paginator = Paginator(post_list, NUM_ITEMS_PER_PAGE)
-    page_number = request.GET.get('page')
-    return paginator.get_page(page_number)
+    return Paginator(posts, items_per_page).get_page(request.GET.get('page'))
 
 
 def index(request):
     template = 'blog/index.html'
-    post_list = Post.objects.published().annotate(
+    posts = Post.objects.published().annotate(
         comment_count=Count('comments')
-    ).order_by('-pub_date')[:NUM_PUBLICATIONS_ON_MAIN_PAGE]
-    page_obj = _get_page_obj(post_list, request)
-    context = {'page_obj': page_obj}
-    return render(request, template, context=context)
+    ).order_by('-pub_date')
+    return render(request, template, 
+                  context={'page_obj': _get_page_obj(posts, request)})
 
 
 def post_detail(request, post_id):
@@ -66,10 +61,10 @@ def category_posts(request, category_slug):
         is_published=True,
         slug=category_slug
     )
-    post_list = category.posts.published().annotate(
+    posts = category.posts.published().annotate(
         comment_count=Count('comments')
     ).order_by('-pub_date')
-    page_obj = _get_page_obj(post_list, request)
+    page_obj = _get_page_obj(posts, request)
     template = 'blog/category.html'
     context = {
         'category': category,
@@ -83,11 +78,11 @@ def profile_view(request, username):
     template = 'blog/profile.html'
     user_profile = get_object_or_404(User, username=username)
     is_owner = request.user == user_profile
-    post_list = user_profile.posts.annotate(
+    posts = user_profile.posts.annotate(
         comment_count=Count('comments')).order_by('-pub_date')
     if not is_owner:
-        post_list = post_list.published()
-    page_obj = _get_page_obj(post_list, request)
+        posts = posts.published()
+    page_obj = _get_page_obj(posts, request)
     context = {
         'profile': user_profile,
         'page_obj': page_obj,
