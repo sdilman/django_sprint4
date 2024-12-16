@@ -4,7 +4,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView
 
