@@ -34,10 +34,10 @@ def index(request):
     return render(request, template, context=context)
 
 
-def post_detail(request, id):
+def post_detail(request, post_id):
     template = 'blog/detail.html'
     user = request.user
-    post = get_object_or_404(Post, id=id)
+    post = get_object_or_404(Post, id=post_id)
     if (
         post.author != user
         and not (post.is_published and post.category.is_published)
@@ -49,7 +49,7 @@ def post_detail(request, id):
             comment = form.save(commit=False)
             comment.post = post
             comment.save()
-            return redirect('blog:post_detail', id=post.id)
+            return redirect('blog:post_detail', post_id=post.id)
     else:
         form = CommentForm()
 
@@ -141,7 +141,7 @@ class PostCreateView(PostMixin, LoginRequiredMixin, CreateView):
 class PostUpdateView(PostMixin, OnlyAuthorMixin, UpdateView):
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'id': self.object.id})
+        return reverse('blog:post_detail', kwargs={'post_id': self.object.id})
 
     def get_object(self, queryset=None):
         post_id = self.kwargs.get('post_id')
@@ -151,7 +151,7 @@ class PostUpdateView(PostMixin, OnlyAuthorMixin, UpdateView):
     def handle_no_permission(self):
         if self.request.method == 'POST':
             post_id = self.kwargs.get('post_id')
-            return redirect('blog:post_detail', id=post_id)
+            return redirect('blog:post_detail', post_id=post_id)
 
 
 class PostDeleteView(PostMixin, OnlyAuthorMixin, DeleteView):
@@ -177,7 +177,8 @@ class CommentMixinView:
         return context
 
     def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'id': self.object.post.id})
+        return reverse('blog:post_detail', 
+                       kwargs={'post_id': self.object.post.id})
 
 
 class CommentCreateView(CommentMixinView, LoginRequiredMixin, CreateView):
