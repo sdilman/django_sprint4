@@ -9,7 +9,7 @@ TRUNCATE_TEXT_LENGTH = 30
 User = get_user_model()
 
 
-class EditableModel(models.Model):
+class PublishableModel(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Добавлено'
@@ -24,7 +24,7 @@ class EditableModel(models.Model):
         abstract = True
 
 
-class Category(EditableModel):
+class Category(PublishableModel):
     title = models.CharField(
         max_length=256,
         verbose_name='Заголовок'
@@ -43,12 +43,10 @@ class Category(EditableModel):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        if len(self.title) > TRUNCATE_TEXT_LENGTH:
-            return (self.title[:TRUNCATE_TEXT_LENGTH] + '...')
-        return self.title
+        return self.title[:TRUNCATE_TEXT_LENGTH]
 
 
-class Location(EditableModel):
+class Location(PublishableModel):
     name = models.CharField(max_length=256, verbose_name='Название места')
 
     class Meta:
@@ -57,12 +55,10 @@ class Location(EditableModel):
         verbose_name_plural = 'Местоположения'
 
     def __str__(self):
-        if len(self.name) > TRUNCATE_TEXT_LENGTH:
-            return (self.name[:TRUNCATE_TEXT_LENGTH] + '...')
-        return self.name
+        return self.name[:TRUNCATE_TEXT_LENGTH]
 
 
-class Post(EditableModel):
+class Post(PublishableModel):
     title = models.CharField(
         max_length=256,
         verbose_name='Заголовок'
@@ -102,12 +98,10 @@ class Post(EditableModel):
         verbose_name_plural = 'Публикации'
 
     def __str__(self):
-        if len(self.title) > TRUNCATE_TEXT_LENGTH:
-            return (self.title[:TRUNCATE_TEXT_LENGTH] + '...')
-        return self.title
+        return self.title[:TRUNCATE_TEXT_LENGTH]
 
 
-class Comment(EditableModel):
+class Comment(PublishableModel):
     text = models.TextField(verbose_name='Комментарий')
     post = models.ForeignKey(
         Post,
@@ -127,6 +121,4 @@ class Comment(EditableModel):
         verbose_name_plural = 'комментарии'
 
     def __str__(self):
-        if len(self.title) > TRUNCATE_TEXT_LENGTH:
-            return (self.title[:TRUNCATE_TEXT_LENGTH] + '...')
-        return self.title
+        return self.title[:TRUNCATE_TEXT_LENGTH]
