@@ -132,7 +132,7 @@ class PostCreateView(PostMixin, LoginRequiredMixin, CreateView):
 class PostUpdateView(PostMixin, OnlyAuthorMixin, UpdateView):
 
     def get_success_url(self):
-        return reverse('blog:post_detail', 
+        return reverse('blog:post_detail',
                        args=[self.kwargs[self.pk_url_kwarg]])
 
     def handle_no_permission(self):
