@@ -101,7 +101,11 @@ class Post(PublishableModel):
         return self.title[:TRUNCATE_TEXT_LENGTH]
 
 
-class Comment(PublishableModel):
+class Comment(models.Model):
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Добавлено'
+    )
     text = models.TextField(verbose_name='Комментарий')
     post = models.ForeignKey(
         Post,
