@@ -7,7 +7,6 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.views.generic import CreateView, DeleteView, UpdateView
 
-from .enums import PostFlags
 from .forms import CommentForm, PostForm
 from .models import Category, Comment, Post
 
@@ -22,8 +21,19 @@ def _get_page_obj(posts, request, items_per_page=ITEMS_PER_PAGE):
 
 def index(request):
     return render(
-        request, 'blog/index.html',
-        context={'page_obj': _get_page_obj(Post.objects.selected(), request)})
+        request,
+        'blog/index.html',
+        context={
+            'page_obj': _get_page_obj(
+                Post.objects.selected(
+                    apply_published=True,
+                    apply_related=True,
+                    apply_annotated=True
+                ),
+                request
+            )
+        }
+    )
 
 
 def post_detail(request, post_id):
@@ -31,7 +41,7 @@ def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     if post.author != user:
         post = get_object_or_404(
-            Post.objects.selected(PostFlags.PUBLISHED | PostFlags.RELATED),
+            Post.objects.selected(apply_published=True),
             id=post_id
         )
     form = CommentForm(request.POST or None)
@@ -54,20 +64,32 @@ def category_posts(request, category_slug):
         request, 'blog/category.html',
         context={
             'category': category,
-            'page_obj': _get_page_obj(category.posts.selected(), request)
+            'page_obj': _get_page_obj(
+                category.posts.selected(
+                    apply_published=True,
+                    apply_related=True,
+                    apply_annotated=True),
+                request
+            )
         }
     )
 
 
 def profile_view(request, username):
     user = get_object_or_404(User, username=username)
-    is_owner = request.user == user
-    posts = user.posts.selected(~PostFlags.PUBLISHED)
-    if not is_owner:
-        posts = posts.selected(PostFlags.PUBLISHED)
     return render(
         request, 'blog/profile.html',
-        context={'profile': user, 'page_obj': _get_page_obj(posts, request)}
+        context={
+            'profile': user,
+            'page_obj': _get_page_obj(
+                user.posts.selected(
+                    apply_related=True,
+                    apply_annotated=True,
+                    apply_published=(request.user != user)
+                ),
+                request
+            )
+        }
     )
 
 
@@ -110,14 +132,18 @@ class PostCreateView(PostMixin, LoginRequiredMixin, CreateView):
 class PostUpdateView(PostMixin, OnlyAuthorMixin, UpdateView):
 
     def get_success_url(self):
-        return reverse('blog:post_detail', args=[self.object.id])
+        return reverse('blog:post_detail', 
+                       args=[self.kwargs[self.pk_url_kwarg]])
 
     def handle_no_permission(self):
         if self.request.method == 'POST':
             return redirect('blog:post_detail',
                             post_id=self.kwargs[self.pk_url_kwarg])
         else:
-            raise Http404
+            raise Http404(
+                'Обращаться к данной странице разрешается '
+                'только через метод POST'
+            )
 
 
 class PostDeleteView(PostMixin, OnlyAuthorMixin, DeleteView):
