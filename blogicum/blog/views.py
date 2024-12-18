@@ -14,7 +14,7 @@ from .models import Category, Comment, Post
 ITEMS_PER_PAGE = 10
 
 
-def _get_page_obj(posts, request, items_per_page=ITEMS_PER_PAGE):
+def get_page_obj(posts, request, items_per_page=ITEMS_PER_PAGE):
     """Make page_obj for page context."""
     return Paginator(posts, items_per_page).get_page(request.GET.get('page'))
 
@@ -24,12 +24,8 @@ def index(request):
         request,
         'blog/index.html',
         context={
-            'page_obj': _get_page_obj(
-                Post.objects.selected(
-                    apply_published=True,
-                    apply_related=True,
-                    apply_annotated=True
-                ),
+            'page_obj': get_page_obj(
+                Post.objects.selected(),
                 request
             )
         }
@@ -49,7 +45,7 @@ def post_detail(request, post_id):
         comment = form.save(commit=False)
         comment.post = post
         comment.save()
-        return redirect('blog:post_detail', post_id=post.id)
+        return redirect('blog:post_detail', post.id)
     return render(request, 'blog/detail.html',
                   context={'form': form, 'post': post})
 
@@ -64,7 +60,7 @@ def category_posts(request, category_slug):
         request, 'blog/category.html',
         context={
             'category': category,
-            'page_obj': _get_page_obj(
+            'page_obj': get_page_obj(
                 category.posts.selected(
                     apply_published=True,
                     apply_related=True,
@@ -76,16 +72,14 @@ def category_posts(request, category_slug):
 
 
 def profile_view(request, username):
-    user = get_object_or_404(User, username=username)
+    author = get_object_or_404(User, username=username)
     return render(
         request, 'blog/profile.html',
         context={
-            'profile': user,
-            'page_obj': _get_page_obj(
-                user.posts.selected(
-                    apply_related=True,
-                    apply_annotated=True,
-                    apply_published=(request.user != user)
+            'profile': author,
+            'page_obj': get_page_obj(
+                author.posts.selected(
+                    apply_published=(request.user != author)
                 ),
                 request
             )
@@ -99,7 +93,7 @@ def profile_edit_view(request):
     form = UserChangeForm(request.POST or None, instance=request.user)
     if form.is_valid():
         form.save()
-        return redirect('blog:profile', username=request.user.username)
+        return redirect('blog:profile', request.user.username)
     return render(request, template, context={'form': form})
 
 
@@ -137,12 +131,11 @@ class PostUpdateView(PostMixin, OnlyAuthorMixin, UpdateView):
 
     def handle_no_permission(self):
         if self.request.method == 'POST':
-            return redirect('blog:post_detail',
-                            post_id=self.kwargs[self.pk_url_kwarg])
+            return redirect('blog:post_detail', self.kwargs[self.pk_url_kwarg])
         else:
             raise Http404(
-                'Обращаться к данной странице разрешается '
-                'только через метод POST'
+                f'Обращаться к странице {self.request.path} используя'
+                f' метод {self.request.method} не разрешается.'
             )
 
 

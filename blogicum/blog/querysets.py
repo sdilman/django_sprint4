@@ -5,10 +5,12 @@ from django.utils.timezone import now
 
 class PostQuerySet(models.QuerySet):
 
-    def selected(self,
-                 apply_published=False,
-                 apply_related=False,
-                 apply_annotated=False):
+    def selected(
+        self,
+        apply_published=True,
+        apply_related=True,
+        apply_annotated=True
+    ):
         """Return selected posts."""
         posts = self
         if apply_published:
