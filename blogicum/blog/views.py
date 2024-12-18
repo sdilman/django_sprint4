@@ -37,7 +37,7 @@ def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     if post.author != user:
         post = get_object_or_404(
-            Post.objects.selected(apply_published=True),
+            Post.objects.selected(apply_related=False, apply_annotated=False),
             id=post_id
         )
     form = CommentForm(request.POST or None)
@@ -61,10 +61,7 @@ def category_posts(request, category_slug):
         context={
             'category': category,
             'page_obj': get_page_obj(
-                category.posts.selected(
-                    apply_published=True,
-                    apply_related=True,
-                    apply_annotated=True),
+                category.posts.selected(),
                 request
             )
         }
